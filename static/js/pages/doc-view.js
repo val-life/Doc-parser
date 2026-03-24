@@ -4,7 +4,7 @@ import { api } from '../api.js';
 import { esc } from '../utils.js';
 import { toast } from '../toast.js';
 import { watchJob } from '../sse.js';
-import { state, setBreadcrumb, setTopbarActions, registerPage, addCleanup } from '../state.js';
+import { state, setBreadcrumb, setTopbarActions, registerPage } from '../state.js';
 
 registerPage('doc-view', renderDocView);
 
@@ -62,9 +62,9 @@ async function renderDocView() {
          </div>
        </div>`
     : isPreviewable
-      ? `<div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column">
-           ${ext !== '.pdf' ? `<div id="preview-converting" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--paper);z-index:1;font-size:13px;color:var(--ink-muted)">Converting to PDF\u2026</div>` : ''}
-           <iframe class="doc-preview-frame" src="${esc(previewSrc)}" title="Original document" onload="document.getElementById('preview-converting')?.remove()"></iframe>
+       ? `<div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column">
+         ${ext !== '.pdf' ? `<div id="preview-converting" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--paper);z-index:1;font-size:13px;color:var(--ink-muted)">Converting to PDF\u2026</div>` : ''}
+         <iframe class="doc-preview-frame" id="file-preview-frame" src="${ext === '.pdf' ? esc(previewSrc) : 'about:blank'}" data-preview-src="${esc(previewSrc)}" title="Original document"></iframe>
          </div>`
       : `<div class="doc-preview-placeholder">
            <svg viewBox="0 0 24 24" fill="none" width="40" height="40"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M8 8h8M8 12h8M8 16h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
@@ -139,6 +139,40 @@ async function renderDocView() {
         }
       });
     }
+  }
+
+  if (!isUrlSource && isPreviewable && ext !== '.pdf') {
+    const previewFrame = document.getElementById('file-preview-frame');
+    const previewOverlay = document.getElementById('preview-converting');
+    const previewUrl = previewFrame?.dataset.previewSrc || previewSrc;
+
+    const hidePreviewOverlay = () => {
+      previewOverlay?.remove();
+    };
+
+    const showPreviewError = (message) => {
+      if (!previewOverlay) return;
+      previewOverlay.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px;text-align:center;max-width:280px">
+          <div>${esc(message)}</div>
+          <a class="btn btn-ghost" href="${esc(previewUrl)}" target="_blank" rel="noopener noreferrer">Open preview</a>
+        </div>`;
+    };
+
+    previewFrame?.addEventListener('load', hidePreviewOverlay, { once: true });
+    previewFrame?.addEventListener('error', () => showPreviewError('Preview failed to load'));
+
+    fetch(previewUrl, { method: 'HEAD' })
+      .then(response => {
+        if (!response.ok) throw new Error(`Preview request failed (${response.status})`);
+        if (previewFrame) {
+          previewFrame.src = previewUrl;
+          window.setTimeout(hidePreviewOverlay, 1200);
+        }
+      })
+      .catch(() => {
+        showPreviewError('Could not generate a PDF preview for this document');
+      });
   }
 
   const statusEl = document.getElementById('stream-status');

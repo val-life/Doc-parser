@@ -390,6 +390,14 @@ def _run_download(job_id: str, slug: str) -> None:
 app = FastAPI(title="RAG Document Parser")
 
 
+@app.middleware("http")
+async def disable_static_cache(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 @app.on_event("startup")
 async def _startup() -> None:
     global _main_loop
@@ -479,7 +487,7 @@ async def api_get_file(kb: str, filename: str):
     return FileResponse(str(p), filename=filename, content_disposition_type="inline")
 
 
-@app.get("/api/knowledge-bases/{kb}/preview/{filename}")
+@app.api_route("/api/knowledge-bases/{kb}/preview/{filename}", methods=["GET", "HEAD"])
 async def api_preview_file(kb: str, filename: str):
     src = _files_dir(kb) / filename
     if not src.exists():
