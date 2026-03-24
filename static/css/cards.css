@@ -1,0 +1,240 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Paper Mill — Cards
+   KB cards · Model cards · Add-new card
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Grid ─────────────────────────────────────────────────────────────────── */
+.kb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--sp-5);
+}
+
+.model-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: var(--sp-5);
+}
+
+/* ── KB card ──────────────────────────────────────────────────────────────── */
+.kb-card {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--sp-5);
+  cursor: pointer;
+  transition:
+    box-shadow var(--dur-slow) var(--ease),
+    transform var(--dur-slow) var(--ease),
+    border-color var(--dur) var(--ease);
+  box-shadow: var(--shadow-card);
+}
+
+/* Layered paper-stack effect — bottom sheets peeking out */
+.kb-card::before,
+.kb-card::after {
+  content: '';
+  position: absolute;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--paper-warm);
+  z-index: -1;
+  transition:
+    transform var(--dur-slow) var(--ease),
+    opacity var(--dur-slow) var(--ease);
+}
+
+.kb-card::before {
+  inset: 3px -2px -3px 2px;
+  transform: rotate(0.5deg);
+  opacity: 0.6;
+}
+
+.kb-card::after {
+  inset: 5px -3px -5px 3px;
+  transform: rotate(1deg);
+  opacity: 0.3;
+}
+
+.kb-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-3px);
+  border-color: var(--ink-ghost);
+}
+
+.kb-card:hover::before {
+  transform: rotate(1deg) translateY(1px);
+  opacity: 0.8;
+}
+.kb-card:hover::after {
+  transform: rotate(1.8deg) translateY(2px);
+  opacity: 0.5;
+}
+
+/* ── KB card elements ─────────────────────────────────────────────────────── */
+.kb-card-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper-deep);
+  border-radius: var(--radius);
+  margin-bottom: var(--sp-3);
+}
+
+.kb-card-icon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--vermillion);
+}
+
+.kb-card-name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: var(--sp-3);
+  letter-spacing: var(--tracking-tight);
+  word-break: break-word;
+}
+
+.kb-card-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-3);
+}
+
+.kb-card-actions {
+  position: absolute;
+  top: var(--sp-3);
+  right: var(--sp-3);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.kb-card:hover .kb-card-actions {
+  opacity: 1;
+}
+
+/* ── Add-new card ─────────────────────────────────────────────────────────── */
+.kb-add-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-8);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-wide);
+  cursor: pointer;
+  transition:
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    background var(--dur) var(--ease);
+  background: transparent;
+}
+
+.kb-add-card svg {
+  width: 24px;
+  height: 24px;
+  opacity: 0.5;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.kb-add-card:hover {
+  border-color: var(--vermillion);
+  color: var(--vermillion);
+  background: var(--vermillion-ghost);
+}
+
+.kb-add-card:hover svg { opacity: 1; }
+
+/* ── Model card ───────────────────────────────────────────────────────────── */
+.model-card {
+  background: var(--paper);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--sp-5);
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow var(--dur-slow) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.model-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--ink-ghost);
+}
+
+.model-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--sp-4);
+}
+
+.model-card-name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: 2px;
+}
+
+.model-card-label {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
+/* Model status badge */
+.model-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px var(--sp-2);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-wide);
+  border-radius: 99px;
+  flex-shrink: 0;
+}
+
+.model-status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.model-status-badge.local {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.model-status-badge.local::before { background: var(--success); }
+
+.model-status-badge.remote {
+  background: var(--paper-deep);
+  color: var(--ink-muted);
+}
+.model-status-badge.remote::before { background: var(--ink-ghost); }
+
+.model-card-meta {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  margin-bottom: var(--sp-4);
+  line-height: var(--leading-relaxed);
+}
+
+.model-card-path {
+  font-size: var(--text-xs);
+  color: var(--ink-ghost);
+  margin-top: var(--sp-1);
+  word-break: break-all;
+}

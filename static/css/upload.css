@@ -1,0 +1,127 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Paper Mill — Upload Zone
+───────────────────────────────────────────────────────────────────────────── */
+
+.upload-zone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-10) var(--sp-8);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition:
+    border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+  margin-bottom: var(--sp-6);
+  overflow: hidden;
+}
+
+/* Ruled-line background pattern (like lined notebook paper) */
+.upload-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(
+      180deg,
+      transparent,
+      transparent 23px,
+      var(--paper-ruling) 23px,
+      var(--paper-ruling) 24px
+    );
+  opacity: 0.3;
+  transition: opacity var(--dur) var(--ease);
+}
+
+/* Red margin line (like ruled paper) */
+.upload-zone::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 60px;
+  width: 1px;
+  background: var(--vermillion);
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.upload-zone:hover {
+  border-color: var(--ink-ghost);
+  background: var(--paper-warm);
+}
+
+.upload-zone:hover::before {
+  opacity: 0.5;
+}
+
+/* Drag-over state — vermillion glow */
+.upload-zone.drag-over {
+  border-color: var(--vermillion);
+  background: var(--vermillion-ghost);
+  box-shadow: 0 0 0 4px var(--vermillion-ring);
+}
+
+.upload-zone.drag-over::before {
+  opacity: 0.15;
+}
+
+/* Hidden file input */
+.upload-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* Upload icon */
+.upload-zone-icon {
+  width: 40px;
+  height: 40px;
+  color: var(--ink-ghost);
+  margin-bottom: var(--sp-3);
+  transition: color var(--dur) var(--ease);
+  position: relative;
+  z-index: 1;
+}
+
+.upload-zone:hover .upload-zone-icon {
+  color: var(--ink-muted);
+}
+.upload-zone.drag-over .upload-zone-icon {
+  color: var(--vermillion);
+}
+
+/* Upload text */
+.upload-zone-text {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--ink-soft);
+  margin-bottom: var(--sp-1);
+  position: relative;
+  z-index: 1;
+}
+
+.upload-zone-sub {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: var(--sp-4);
+  position: relative;
+  z-index: 1;
+}
+
+/* Language selector within upload zone */
+.upload-lang-select {
+  display: flex;
+  gap: var(--sp-2);
+  position: relative;
+  z-index: 3;
+}

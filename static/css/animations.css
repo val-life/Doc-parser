@@ -1,0 +1,139 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Paper Mill — Keyframes & Motion Utilities
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Page enter (fade + slide from bottom) ────────────────────────────────── */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: pageEnter var(--dur-page) var(--ease-out) both;
+}
+
+/* ── Stagger children ─────────────────────────────────────────────────────── */
+@keyframes staggerIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger > * {
+  animation: staggerIn 400ms var(--ease-out) both;
+}
+
+.stagger > *:nth-child(1)  { animation-delay: 50ms; }
+.stagger > *:nth-child(2)  { animation-delay: 100ms; }
+.stagger > *:nth-child(3)  { animation-delay: 150ms; }
+.stagger > *:nth-child(4)  { animation-delay: 200ms; }
+.stagger > *:nth-child(5)  { animation-delay: 250ms; }
+.stagger > *:nth-child(6)  { animation-delay: 300ms; }
+.stagger > *:nth-child(7)  { animation-delay: 350ms; }
+.stagger > *:nth-child(8)  { animation-delay: 400ms; }
+.stagger > *:nth-child(9)  { animation-delay: 450ms; }
+.stagger > *:nth-child(10) { animation-delay: 500ms; }
+.stagger > *:nth-child(11) { animation-delay: 550ms; }
+.stagger > *:nth-child(12) { animation-delay: 600ms; }
+
+/* ── Loading skeleton shimmer ─────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--paper-warm) 25%,
+    var(--paper-deep) 50%,
+    var(--paper-warm) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease infinite;
+  border-radius: var(--radius);
+}
+
+/* ── Progress bar paper-feed ──────────────────────────────────────────────── */
+@keyframes paperFeed {
+  0%   { background-position: 0 0; }
+  100% { background-position: 30px 0; }
+}
+
+/* ── Indeterminate progress ───────────────────────────────────────────────── */
+@keyframes indeterminate {
+  0%   { left: -40%; width: 40%; }
+  50%  { left: 30%;  width: 50%; }
+  100% { left: 100%; width: 40%; }
+}
+
+/* ── Parsing blink ────────────────────────────────────────────────────────── */
+@keyframes statusBlink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+/* ── Toast slide ──────────────────────────────────────────────────────────── */
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(60px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toastOut {
+  to {
+    opacity: 0;
+    transform: translateX(60px) scale(0.95);
+  }
+}
+
+/* ── Modal enter ──────────────────────────────────────────────────────────── */
+@keyframes modalOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes modalBoxIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Card lift ────────────────────────────────────────────────────────────── */
+@keyframes cardPress {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+/* ── Pulse (generic) ──────────────────────────────────────────────────────── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+/* ── Spin ─────────────────────────────────────────────────────────────────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

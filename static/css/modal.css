@@ -1,0 +1,52 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Paper Mill — Modal
+───────────────────────────────────────────────────────────────────────────── */
+
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 26, 24, 0.3);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: modalOverlayIn var(--dur-slow) var(--ease-out) both;
+}
+
+#modal-overlay[hidden] {
+  display: none;
+}
+
+.modal-box {
+  background: var(--paper);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  width: min(440px, calc(100vw - 48px));
+  padding: var(--sp-6);
+  animation: modalBoxIn var(--dur-slow) var(--ease-spring) both;
+}
+
+.modal-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: var(--sp-4);
+  letter-spacing: var(--tracking-tight);
+}
+
+.modal-body {
+  margin-bottom: var(--sp-6);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  line-height: var(--leading-normal);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}

@@ -1,0 +1,270 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Paper Mill — App Shell Layout
+   Sidebar (book spine) · Topbar · Scrollable content
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── App grid ─────────────────────────────────────────────────────────────── */
+#app {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Sidebar (book spine) ─────────────────────────────────────────────────── */
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--spine);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  padding: var(--sp-6) 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Spine texture — very subtle vertical grain */
+#sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 3px,
+      rgba(255, 255, 255, 0.008) 3px,
+      rgba(255, 255, 255, 0.008) 4px
+    );
+}
+
+/* ── Brand ────────────────────────────────────────────────────────────────── */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-6);
+  margin-bottom: var(--sp-8);
+  position: relative;
+}
+
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  background: var(--vermillion);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brand-mark svg {
+  width: 16px;
+  height: 16px;
+  color: #fff;
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--spine-text);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* ── Sidebar nav ──────────────────────────────────────────────────────────── */
+#sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: 0 var(--sp-3);
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-md);
+  color: var(--spine-muted);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  transition:
+    color var(--dur) var(--ease),
+    background var(--dur) var(--ease);
+  position: relative;
+}
+
+.nav-item svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.nav-item:hover {
+  background: var(--spine-hover);
+  color: var(--spine-text);
+}
+.nav-item:hover svg { opacity: 1; }
+
+.nav-item.active,
+.nav-item[aria-current="true"] {
+  background: var(--spine-hover);
+  color: #fff;
+}
+.nav-item.active svg,
+.nav-item[aria-current="true"] svg { opacity: 1; }
+
+/* Vermillion accent bar on active nav */
+.nav-item.active::before,
+.nav-item[aria-current="true"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: var(--vermillion);
+  border-radius: 0 2px 2px 0;
+}
+
+/* ── Sidebar footer ───────────────────────────────────────────────────────── */
+.sidebar-footer {
+  padding: var(--sp-4) var(--sp-6);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: auto;
+}
+
+.version-tag {
+  font-size: var(--text-xs);
+  color: var(--spine-muted);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+}
+
+/* ── Main area ────────────────────────────────────────────────────────────── */
+#main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Topbar ───────────────────────────────────────────────────────────────── */
+#topbar {
+  height: var(--topbar-h);
+  min-height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp-8);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--paper);
+  position: relative;
+  z-index: 5;
+}
+
+/* ── Breadcrumb ───────────────────────────────────────────────────────────── */
+#breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-sm);
+}
+
+.bc-item {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-wide);
+}
+
+.bc-item[data-nav] {
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease);
+}
+.bc-item[data-nav]:hover {
+  color: var(--vermillion);
+}
+
+.bc-item.current {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.bc-sep {
+  color: var(--ink-ghost);
+  font-size: var(--text-xs);
+  user-select: none;
+}
+
+/* ── Topbar actions ───────────────────────────────────────────────────────── */
+#topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* ── Content area ─────────────────────────────────────────────────────────── */
+#content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--sp-8);
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Section titles ───────────────────────────────────────────────────────── */
+.section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: var(--sp-2);
+  letter-spacing: var(--tracking-tight);
+}
+
+.section-subtitle {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  margin-bottom: var(--sp-8);
+  letter-spacing: var(--tracking-wide);
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-16) var(--sp-8);
+  text-align: center;
+  color: var(--ink-muted);
+}
+
+.empty-state svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--sp-4);
+  color: var(--ink-ghost);
+}
+
+.empty-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  color: var(--ink-soft);
+  margin-bottom: var(--sp-2);
+}
+
+.empty-sub {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}

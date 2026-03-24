@@ -1,0 +1,128 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Paper Mill — Reset + Base Typography
+───────────────────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+  overflow: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  height: 100%;
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+/* Paper grain texture — layered noise via CSS */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.35;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/* Subtle ruled-line horizon */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    repeating-linear-gradient(
+      180deg,
+      transparent,
+      transparent 39px,
+      rgba(211, 201, 184, 0.15) 39px,
+      rgba(211, 201, 184, 0.15) 40px
+    );
+}
+
+/* ── Links ────────────────────────────────────────────────────────────────── */
+a {
+  color: var(--vermillion);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+/* ── Selection ────────────────────────────────────────────────────────────── */
+::selection {
+  background: var(--vermillion-ring);
+  color: var(--ink);
+}
+
+/* ── Scrollbar (webkit) ───────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ink-ghost);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-faint);
+}
+
+/* ── Focus ring ───────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--vermillion);
+  outline-offset: 2px;
+}
+
+/* ── Headings (Playfair Display) ──────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6,
+.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink);
+}
+
+code, pre, kbd {
+  font-family: var(--font-ui);
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}

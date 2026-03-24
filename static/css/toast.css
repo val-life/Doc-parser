@@ -1,0 +1,71 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Paper Mill — Toast Notifications
+───────────────────────────────────────────────────────────────────────────── */
+
+#toast-container {
+  position: fixed;
+  bottom: var(--sp-6);
+  right: var(--sp-6);
+  z-index: 200;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--sp-2);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--paper);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lifted);
+  min-width: 260px;
+  max-width: 380px;
+  pointer-events: auto;
+  animation: toastIn var(--dur-slow) var(--ease-spring) both;
+}
+
+.toast.out {
+  animation: toastOut var(--dur) var(--ease) both;
+}
+
+/* Colored dot indicator */
+.toast-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.toast.success .toast-dot { background: var(--success); }
+.toast.error .toast-dot   { background: var(--error); }
+.toast.info .toast-dot    { background: var(--slate); }
+
+/* Semantic left border accent */
+.toast.success { border-left: 3px solid var(--success); }
+.toast.error   { border-left: 3px solid var(--error); }
+.toast.info    { border-left: 3px solid var(--slate); }
+
+.toast-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-title {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink);
+  line-height: var(--leading-tight);
+}
+
+.toast-msg {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  margin-top: 2px;
+  line-height: var(--leading-normal);
+  word-break: break-word;
+}
