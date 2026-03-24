@@ -19,6 +19,12 @@ async function renderKbSources() {
     { label: kb, page: 'kb-sources', kb },
   ]);
   setTopbarActions(`
+    <button class="btn btn-ghost" id="download-all-output-btn">
+      <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px">
+        <path d="M8 2.5v7M5.5 7.5L8 10l2.5-2.5M3 12.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Download All Outputs
+    </button>
     <button class="btn btn-ghost" id="add-urls-btn">
       <svg viewBox="0 0 16 16" fill="none" style="width:14px;height:14px">
         <path d="M9 2.5A4.5 4.5 0 1 1 2.5 9 4.5 4.5 0 0 1 9 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
@@ -51,7 +57,46 @@ async function renderKbSources() {
 
   setupUploadZone(kb);
   setupAddUrlsBtn(kb);
+  setupDownloadAllBtn(kb);
   await Promise.all([refreshFileList(kb), refreshUrlList(kb)]);
+}
+
+function setupDownloadAllBtn(kb) {
+  const btn = document.getElementById('download-all-output-btn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    downloadAllOutputs(kb);
+  });
+}
+
+async function downloadAllOutputs(kb) {
+  try {
+    const response = await fetch(
+      `/api/knowledge-bases/${encodeURIComponent(kb)}/output/download-all`
+    );
+    if (!response.ok) {
+      let message = response.statusText;
+      try {
+        const data = await response.json();
+        message = data.detail || message;
+      } catch {
+        // Ignore JSON parsing failures for non-JSON error bodies.
+      }
+      throw new Error(message);
+    }
+
+    const blob = await response.blob();
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = `${kb}_output.zip`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
+  } catch (e) {
+    toast('error', 'Download failed', e.message);
+  }
 }
 
 function setupUploadZone(kb) {
@@ -138,8 +183,8 @@ async function refreshFileList(kb) {
     const jobKey = `${kb}/${file.name}`;
     const isRunning = activeJobs.has(jobKey);
     const jobId = isRunning ? (activeJobs.get(jobKey).job_id || '') : '';
-    const actualCls = isRunning ? 'parsing' : cls;
-    const actualLabel = isRunning ? 'Parsing\u2026' : label;
+    const actualCls = isRunning ? 'pending' : cls;
+    const actualLabel = isRunning ? 'Queued' : label;
 
     const row = document.createElement('tr');
     const rowId = fileRowId(kb, file.name);
@@ -169,7 +214,7 @@ async function refreshFileList(kb) {
     progressRow.hidden = true;
     progressRow.innerHTML = `<td colspan="4" style="padding:0 16px 10px">
       <div class="progress-bar-track"><div class="progress-bar-fill indeterminate" id="pb-${row.id}"></div></div>
-      <div style="font-size:11px;color:var(--ink-muted);margin-top:4px" id="pm-${row.id}">Loading model\u2026</div>
+      <div style="font-size:11px;color:var(--ink-muted);margin-top:4px" id="pm-${row.id}">Waiting to start\u2026</div>
     </td>`;
     tbody.appendChild(progressRow);
   });
@@ -292,6 +337,9 @@ function _trackJob(kb, filename, job_id) {
     if (pb && progressPct !== null) {
       pb.classList.remove('indeterminate');
       pb.style.width = `${progressPct}%`;
+    } else if (pb && progressPct === 0) {
+      pb.classList.remove('indeterminate');
+      pb.style.width = '0%';
     }
     if (pm && progressMsg) pm.textContent = progressMsg;
     if (done) {
@@ -303,9 +351,14 @@ function _trackJob(kb, filename, job_id) {
   }
 
   watchJob(job_id, event => {
-    if (event.type === 'pages' || event.type === 'progress') {
-      const pct = event.total > 0 ? Math.round((event.page || 0) / event.total * 100) : null;
-      updateRow('parsing', `${event.page || 0}/${event.total} pages`, pct, event.message, false);
+    if (event.type === 'queued') {
+      updateRow('pending', 'Queued', 0, event.message || 'Waiting to start…', false);
+    } else if (event.type === 'pages') {
+      updateRow('parsing', `0/${event.total} pages`, 0, event.message, false);
+    } else if (event.type === 'progress') {
+      const completed = Number.isFinite(event.completed) ? event.completed : (event.page || 0);
+      const pct = event.total > 0 ? Math.round((completed / event.total) * 100) : null;
+      updateRow('parsing', `Page ${event.page}/${event.total}`, pct, event.message, false);
     } else if (event.type === 'status') {
       updateRow('parsing', 'Parsing\u2026', null, event.message, false);
     } else if (event.type === 'done') {

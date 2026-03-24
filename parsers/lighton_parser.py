@@ -180,7 +180,8 @@ class LightOnParser:
 
         Args:
             images:      Ordered list of page images (from ``base_parser.pdf_to_images``).
-            progress_cb: Optional callable(page: int, total: int) called after each page.
+            progress_cb: Optional callable(page: int, total: int, phase: str)
+                         called when a page starts and when it finishes.
             token_cb:    Optional callable(text: str) called with each streamed token chunk.
 
         Returns:
@@ -190,11 +191,13 @@ class LightOnParser:
         total = len(images)
         for i, img in enumerate(images, 1):
             print(f"  [LightOnParser] Page {i}/{total} — generating…")
+            if progress_cb is not None:
+                progress_cb(i, total, "start")
             md = self.parse_image(img, token_cb=token_cb)
             parts.append(md)
             if i < total and token_cb is not None:
                 token_cb("\n\n---\n\n")
             if progress_cb is not None:
-                progress_cb(i, total)
+                progress_cb(i, total, "done")
 
         return "\n\n---\n\n".join(parts)

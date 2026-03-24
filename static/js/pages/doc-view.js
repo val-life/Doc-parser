@@ -243,11 +243,14 @@ async function renderDocView() {
             outputEl.innerHTML = `<pre class="raw-view">${esc(markdown)}</pre>`;
           }
         }
+      } else if (event.type === 'queued') {
+        setStatus(event.message || 'Queued', 'streaming');
       } else if (event.type === 'status') {
         setStatus(event.message, 'streaming');
-      } else if (event.type === 'progress' || event.type === 'pages') {
-        const msg = event.total ? `Page ${event.page || 0}/${event.total}` : event.message;
-        setStatus(msg, 'streaming');
+      } else if (event.type === 'pages') {
+        setStatus(`0/${event.total} pages`, 'streaming');
+      } else if (event.type === 'progress') {
+        setStatus(event.message || `Page ${event.page || 0}/${event.total}`, 'streaming');
       } else if (event.type === 'done') {
         onDone();
       } else if (event.type === 'error') {

@@ -11,6 +11,7 @@ The project is centered around a FastAPI backend and a static single-page web ap
 - watch live parsing progress over Server-Sent Events (SSE)
 - preview the original document beside the generated Markdown
 - edit and save the generated Markdown in the browser
+- download all generated Markdown outputs for a knowledge base as a zip archive
 
 The primary supported workflow in this repository is the web app in `server.py`.
 
@@ -27,6 +28,7 @@ The primary supported workflow in this repository is the web app in `server.py`.
 - Live job progress and streamed tokens via SSE
 - Side-by-side original/markdown document view
 - In-browser Markdown editing and saving
+- Bulk download of generated Markdown outputs per knowledge base
 
 ## Architecture
 

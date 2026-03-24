@@ -15,12 +15,14 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import io
 import json
 import re
 import shutil
 import threading
 import traceback
 import uuid
+import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
@@ -61,7 +63,8 @@ _job_state: dict[str, dict] = {}
 _job_queues: dict[str, list[asyncio.Queue]] = {}
 _job_lock = threading.Lock()
 _main_loop: asyncio.AbstractEventLoop | None = None
-_executor = ThreadPoolExecutor(max_workers=2)
+_background_executor = ThreadPoolExecutor(max_workers=4)
+_parse_executor = ThreadPoolExecutor(max_workers=1)
 _cancelled_jobs: set[str] = set()
 
 
@@ -83,6 +86,15 @@ def _emit(job_id: str, data: dict) -> None:
 async def _push_event(job_id: str, data: dict) -> None:
     for q in _job_queues.get(job_id, []):
         await q.put(data)
+
+
+def _init_job(job_id: str, message: str = "Queued") -> None:
+    with _job_lock:
+        _job_state[job_id] = {
+            "events": [{"type": "queued", "message": message}],
+            "type": "queued",
+            "message": message,
+        }
 
 
 # ── KB helpers ────────────────────────────────────────────────────────────────
@@ -221,11 +233,23 @@ def _run_parse(job_id: str, kb: str, filename: str) -> None:
         _emit(job_id, {"type": "pages", "total": total,
                         "message": f"Found {total} page(s)"})
 
-        def _progress(page: int, of: int) -> None:
+        def _progress(page: int, of: int, phase: str) -> None:
             if job_id in _cancelled_jobs:
                 raise _CancelledError("Cancelled by user")
-            _emit(job_id, {"type": "progress", "page": page, "total": of,
-                            "message": f"Page {page}/{of}"})
+            completed = page if phase == "done" else max(0, page - 1)
+            message = (
+                f"Parsing page {page}/{of}"
+                if phase == "start"
+                else f"Parsed page {page}/{of}"
+            )
+            _emit(job_id, {
+                "type": "progress",
+                "page": page,
+                "total": of,
+                "phase": phase,
+                "completed": completed,
+                "message": message,
+            })
 
         def _token_cb(text: str) -> None:
             _emit(job_id, {"type": "token", "text": text})
@@ -474,7 +498,7 @@ async def api_preview_file(kb: str, filename: str):
         )
         if needs_conv:
             loop = asyncio.get_running_loop()
-            await loop.run_in_executor(_executor, _convert_for_preview, src, cached)
+            await loop.run_in_executor(_background_executor, _convert_for_preview, src, cached)
         return FileResponse(str(cached), media_type="application/pdf",
                             headers={"Content-Disposition": "inline"})
     raise HTTPException(415, "Preview not available for this file type")
@@ -487,9 +511,8 @@ async def api_parse(kb: str, filename: str):
     if not _safe_kb_path(kb).exists():
         raise HTTPException(404, "KB not found")
     job_id = str(uuid.uuid4())
-    with _job_lock:
-        _job_state[job_id] = {"events": [], "type": "queued", "message": "Queued"}
-    _executor.submit(_run_parse, job_id, kb, filename)
+    _init_job(job_id)
+    _parse_executor.submit(_run_parse, job_id, kb, filename)
     return {"job_id": job_id}
 
 
@@ -501,9 +524,8 @@ async def api_parse_all(kb: str):
     jobs = []
     for f in files:
         job_id = str(uuid.uuid4())
-        with _job_lock:
-            _job_state[job_id] = {"events": [], "type": "queued", "message": "Queued"}
-        _executor.submit(_run_parse, job_id, kb, f["name"])
+        _init_job(job_id)
+        _parse_executor.submit(_run_parse, job_id, kb, f["name"])
         jobs.append({"job_id": job_id, "filename": f["name"]})
     return {"jobs": jobs}
 
@@ -577,9 +599,8 @@ async def api_add_urls(kb: str, req: Request):
         existing_slugs.add(slug)
 
         job_id = str(uuid.uuid4())
-        with _job_lock:
-            _job_state[job_id] = {"events": [], "type": "queued", "message": "Queued"}
-        _executor.submit(_run_url_fetch, job_id, kb, url, slug)
+        _init_job(job_id)
+        _background_executor.submit(_run_url_fetch, job_id, kb, url, slug)
         jobs.append({"job_id": job_id, "slug": slug, "url": url})
 
     _save_url_sources(kb, sources)
@@ -593,9 +614,8 @@ async def api_refetch_url(kb: str, slug: str):
     if not src:
         raise HTTPException(404, "URL source not found")
     job_id = str(uuid.uuid4())
-    with _job_lock:
-        _job_state[job_id] = {"events": [], "type": "queued", "message": "Queued"}
-    _executor.submit(_run_url_fetch, job_id, kb, src["url"], slug)
+    _init_job(job_id)
+    _background_executor.submit(_run_url_fetch, job_id, kb, src["url"], slug)
     return {"job_id": job_id}
 
 
@@ -638,6 +658,29 @@ async def api_save_output(kb: str, filename: str, req: Request):
     out_path = out_dir / (_output_stem(filename) + ".md")
     out_path.write_text(markdown, encoding="utf-8")
     return {"ok": True}
+
+
+@app.get("/api/knowledge-bases/{kb}/output/download-all")
+async def api_download_all_output(kb: str):
+    out_dir = _safe_kb_path(kb) / "output"
+    if not out_dir.exists():
+        raise HTTPException(404, "No output files found")
+
+    output_files = sorted(out_dir.glob("*.md"))
+    if not output_files:
+        raise HTTPException(404, "No output files found")
+
+    archive = io.BytesIO()
+    with zipfile.ZipFile(archive, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for file_path in output_files:
+            zf.writestr(file_path.name, file_path.read_bytes())
+
+    archive.seek(0)
+    archive_name = re.sub(r"[^a-zA-Z0-9._-]+", "_", kb).strip("._") or "knowledge_base"
+    headers = {
+        "Content-Disposition": f'attachment; filename="{archive_name}_output.zip"',
+    }
+    return StreamingResponse(iter([archive.getvalue()]), media_type="application/zip", headers=headers)
 
 
 # ── SSE event stream ──────────────────────────────────────────────────────────
@@ -700,9 +743,8 @@ async def api_download_model(slug: str):
     if slug not in MODELS_INFO:
         raise HTTPException(404, "Unknown model")
     job_id = str(uuid.uuid4())
-    with _job_lock:
-        _job_state[job_id] = {"events": [], "type": "queued", "message": "Queued"}
-    _executor.submit(_run_download, job_id, slug)
+    _init_job(job_id)
+    _background_executor.submit(_run_download, job_id, slug)
     return {"job_id": job_id}
 
 
