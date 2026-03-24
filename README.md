@@ -45,13 +45,6 @@ The app has three main parts:
 3. `static/`
    HTML/CSS/JS frontend for knowledge base management, parsing, previews, and Markdown review.
 
-## Requirements
-
-## Runtime
-
-- Windows is supported and is the best fit for the current DOCX workflow.
-- Python environment with the dependencies from `pyproject.toml` or `requirements.txt`
-- Enough RAM or VRAM for `LightOnOCR-2-1B`
 
 ## Document conversion
 
@@ -67,20 +60,10 @@ The app has three main parts:
 
 ## Installation
 
-You can install dependencies with `uv` or `pip`.
-
-### Option 1: uv
+You can install dependencies with `uv`.
 
 ```powershell
 uv sync
-```
-
-### Option 2: pip
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
 ```
 
 ## Running the app
@@ -181,46 +164,3 @@ Doc parser/
 - On Windows, Microsoft Word is typically required for DOCX conversion through `docx2pdf`.
 - Some external sites block iframe embedding. In the document viewer, URL previews may need to be opened in a new tab instead.
 - Parsing can be slow on CPU. GPU inference is strongly preferred for the LightOnOCR model.
-
-## CLI script status
-
-This repository also includes `parse_documents.py`, but it does not currently match the web app's storage layout:
-
-- it uses `knowledge_base/` and `output/` instead of `knowledge_bases/`
-- it references a Chinese parser module that is not present in this repository
-
-Treat `parse_documents.py` as an experimental or incomplete standalone path unless you plan to update it.
-
-For normal use, start the web app with `server.py`.
-
-## Troubleshooting
-
-### DOCX preview or parsing fails
-
-- Confirm Microsoft Word is installed.
-- Confirm `docx2pdf` is installed in the active environment.
-- Try converting the file manually to PDF and upload the PDF instead.
-
-### Model is not found
-
-- Check whether `models/LightOnOCR-2-1B/config.json` exists.
-- If it does not, download the model from the Models page.
-
-### URLs do not preview inline
-
-- This is often caused by the target site's iframe restrictions.
-- Use the Open in browser action from the document view.
-
-### Parsing is very slow
-
-- Check whether the model is running on CPU instead of CUDA.
-- Reduce concurrent work and parse one file at a time if resources are limited.
-
-## Development
-
-Useful entry points:
-
-- `server.py` for backend routes and job flow
-- `parsers/lighton_parser.py` for model loading and generation
-- `static/js/pages/kb-sources.js` for upload, URL, and parse interactions
-- `static/js/pages/doc-view.js` for live streaming and Markdown editing
