@@ -1,51 +1,26 @@
-# ──────────────────────────────────────────────────────────────────────────────
-# Core deep-learning stack
-# Both parsers (PaddleOCR-VL-1.5 and LightOnOCR-2-1B) use PyTorch + Transformers.
 # Install the CUDA-enabled torch build from https://pytorch.org/get-started/locally/
-# The CPU-only build works for testing but is very slow for large documents.
-# ──────────────────────────────────────────────────────────────────────────────
-torch>=2.1.0
-torchvision>=0.16.0
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Transformers ecosystem
-# transformers ≥ 4.50 provides AutoModelForImageTextToText (PaddleOCR-VL-1.5)
-# and is also required for LightOnOCR-2-1B.
-# ──────────────────────────────────────────────────────────────────────────────
+--extra-index-url https://download.pytorch.org/whl/cu126
+
+# Core AI/ML
+torch>=2.1.0
+torchvision>=0.16.0
 transformers>=4.50.0
 accelerate>=0.30.0
 sentencepiece>=0.2.0
 tiktoken>=0.7.0
 
-# ──────────────────────────────────────────────────────────────────────────────
-# PDF handling (pure-Python renderer, no Poppler required)
-# ──────────────────────────────────────────────────────────────────────────────
+# Document Processing
 pymupdf>=1.24.0
-
-# ──────────────────────────────────────────────────────────────────────────────
-# DOCX / DOC → PDF
-# On Windows, Microsoft Word must be installed (COM automation).
-# On macOS / Linux, LibreOffice must be installed.
-# ──────────────────────────────────────────────────────────────────────────────
 docx2pdf>=0.1.8
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Image processing
-# ──────────────────────────────────────────────────────────────────────────────
 Pillow>=10.0.0
+trafilatura>=1.10.0
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Web server (FastAPI replaces Gradio)
-# ──────────────────────────────────────────────────────────────────────────────
+# API & Networking
 fastapi>=0.110.0
 uvicorn[standard]>=0.27.0
 python-multipart>=0.0.9
-
-# ──────────────────────────────────────────────────────────────────────────────
-# URL → Markdown (web page fetching + main-content extraction)
-# trafilatura handles download, boilerplate removal, and markdown output.
-# ──────────────────────────────────────────────────────────────────────────────
-trafilatura>=1.10.0
 requests>=2.31.0
 
 # ──────────────────────────────────────────────────────────────────────────────
