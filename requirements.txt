@@ -4,7 +4,7 @@
 --extra-index-url https://download.pytorch.org/whl/cu126
 
 # Core AI/ML
-torch>=2.1.0
+torch>=2.10.0
 torchvision>=0.16.0
 transformers>=4.50.0
 accelerate>=0.30.0
