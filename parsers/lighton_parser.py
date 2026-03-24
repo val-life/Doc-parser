@@ -12,6 +12,8 @@ Reference implementation (Pinokio app):
 from __future__ import annotations
 
 import gc
+import importlib
+import os
 import time
 from pathlib import Path
 
@@ -38,6 +40,62 @@ _LOCAL_MODEL_DIR = Path(__file__).resolve().parent.parent / "models" / "LightOnO
 _MODEL_PATH = str(_LOCAL_MODEL_DIR) if (_LOCAL_MODEL_DIR / "config.json").exists() else MODEL_ID
 
 
+def _probe_flash_attn() -> tuple[bool, str | None]:
+    try:
+        importlib.import_module("flash_attn.flash_attn_interface")
+        return True, None
+    except ModuleNotFoundError:
+        return False, "flash-attn is not installed"
+    except Exception as exc:
+        return False, f"flash-attn is installed but unusable ({exc})"
+
+
+def _resolve_attn_implementation() -> tuple[str | None, str]:
+    flash_attn_ok, flash_attn_status = _probe_flash_attn()
+    raw_value = os.environ.get("LIGHTON_ATTN_IMPLEMENTATION", "auto").strip().lower()
+    aliases = {
+        "": "auto",
+        "auto": "auto",
+        "flash": "flash_attention_2",
+        "flash2": "flash_attention_2",
+        "flash-attn": "flash_attention_2",
+        "flash_attention_2": "flash_attention_2",
+        "fa2": "flash_attention_2",
+        "sdpa": "sdpa",
+        "eager": "eager",
+    }
+    selected = aliases.get(raw_value)
+    if selected is None:
+        print(
+            "[LightOnParser] Ignoring unsupported LIGHTON_ATTN_IMPLEMENTATION="
+            f"{raw_value!r}; expected auto, flash_attention_2, sdpa, or eager"
+        )
+        selected = "auto"
+
+    if selected == "auto":
+        if torch.cuda.is_available() and flash_attn_ok:
+            return "flash_attention_2", "auto-selected FlashAttention 2"
+        if torch.cuda.is_available():
+            reason = flash_attn_status or "flash-attn unavailable"
+            return "sdpa", f"{reason}; using PyTorch SDPA"
+        return None, "CUDA not available; using model default attention"
+
+    if selected == "flash_attention_2":
+        if not torch.cuda.is_available():
+            return None, "FlashAttention 2 requested but CUDA is unavailable; using model default attention"
+        if not flash_attn_ok:
+            reason = flash_attn_status or "flash-attn unavailable"
+            return "sdpa", f"FlashAttention 2 requested but {reason}; falling back to PyTorch SDPA"
+        return "flash_attention_2", "using FlashAttention 2"
+
+    if selected == "sdpa":
+        if not torch.cuda.is_available():
+            return None, "SDPA requested but CUDA is unavailable; using model default attention"
+        return "sdpa", "using PyTorch SDPA"
+
+    return selected, f"using {selected} attention"
+
+
 class LightOnParser:
     """
     Wraps lightonai/LightOnOCR-2-1B for page-level OCR.
@@ -50,6 +108,7 @@ class LightOnParser:
         self._model: LightOnOcrForConditionalGeneration | None = None
         self._processor: LightOnOcrProcessor | None = None
         self._device = device  # None → let accelerate decide via device_map
+        self._attn_implementation: str | None = None
 
     # ------------------------------------------------------------------
     # Lazy loading
@@ -61,11 +120,38 @@ class LightOnParser:
 
         print(f"[LightOnParser] Loading {_MODEL_PATH} …")
         self._processor = LightOnOcrProcessor.from_pretrained(_MODEL_PATH)
-        self._model = LightOnOcrForConditionalGeneration.from_pretrained(
-            _MODEL_PATH,
-            dtype=torch.bfloat16,
-            device_map="auto" if self._device is None else self._device,
-        )
+        attn_implementation, attn_message = _resolve_attn_implementation()
+        print(f"[LightOnParser] Attention backend: {attn_message}")
+
+        model_kwargs = {
+            "torch_dtype": torch.bfloat16,
+            "device_map": "auto" if self._device is None else self._device,
+        }
+        if attn_implementation is not None:
+            model_kwargs["attn_implementation"] = attn_implementation
+
+        try:
+            self._model = LightOnOcrForConditionalGeneration.from_pretrained(
+                _MODEL_PATH,
+                **model_kwargs,
+            )
+            self._attn_implementation = model_kwargs.get("attn_implementation")
+        except (ImportError, RuntimeError, ValueError) as exc:
+            if model_kwargs.get("attn_implementation") != "flash_attention_2":
+                raise
+
+            print(
+                "[LightOnParser] FlashAttention 2 failed during model load; "
+                f"falling back to SDPA ({exc})"
+            )
+            fallback_kwargs = dict(model_kwargs)
+            fallback_kwargs["attn_implementation"] = "sdpa"
+            self._model = LightOnOcrForConditionalGeneration.from_pretrained(
+                _MODEL_PATH,
+                **fallback_kwargs,
+            )
+            self._attn_implementation = "sdpa"
+
         self._model.eval()
 
         # Report where the model actually landed
@@ -75,10 +161,14 @@ class LightOnParser:
             reserved  = torch.cuda.memory_reserved(actual_device)  / 1024**3
             print(
                 f"[LightOnParser] Model loaded on {actual_device} "
-                f"({allocated:.1f} GB allocated / {reserved:.1f} GB reserved)"
+                f"({allocated:.1f} GB allocated / {reserved:.1f} GB reserved, "
+                f"attention={self._attn_implementation or 'default'})"
             )
         else:
-            print(f"[LightOnParser] Model loaded on {actual_device} (CPU — inference will be slow)")
+            print(
+                f"[LightOnParser] Model loaded on {actual_device} "
+                f"(CPU — inference will be slow, attention={self._attn_implementation or 'default'})"
+            )
 
     def unload(self) -> None:
         """Release GPU memory after processing is complete."""

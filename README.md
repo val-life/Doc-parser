@@ -66,6 +66,24 @@ You can install dependencies with `uv`.
 uv sync
 ```
 
+## Attention backends
+
+The parser now supports selecting the Transformers attention backend with the `LIGHTON_ATTN_IMPLEMENTATION` environment variable.
+
+- `auto`: prefers FlashAttention 2 when `flash-attn` is installed on a CUDA system, otherwise falls back to PyTorch SDPA
+- `flash_attention_2`: requests FlashAttention 2 explicitly and falls back to SDPA if it cannot be loaded
+- `sdpa`: uses PyTorch scaled dot-product attention
+- `eager`: disables fused attention backends
+
+Example:
+
+```powershell
+$env:LIGHTON_ATTN_IMPLEMENTATION = "flash_attention_2"
+python server.py
+```
+
+On Windows, `flash-attn` installation is usually the limiting factor. In practice, FlashAttention 2 is most reliable on Linux or WSL2 with a CUDA-enabled PyTorch build, and it commonly lags behind the newest Python releases. If `flash-attn` is missing or its CUDA DLLs cannot be loaded, the app now falls back to SDPA automatically instead of trying to use a broken install.
+
 ## Running the app
 
 ### Start the server
